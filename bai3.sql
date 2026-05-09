@@ -1,52 +1,250 @@
 create database bai3;
 
 use bai3;
+CREATE DATABASE RikkeiClinicDB;
+USE RikkeiClinicDB;
 
+-- PHẦN 1: KHỞI TẠO CẤU TRÚC BẢNG 
+
+-- 1. Bảng Bệnh nhân (Patients)
+CREATE TABLE Patients (
+    patient_id INT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(15) UNIQUE NOT NULL,
+    date_of_birth DATE
+);
+
+-- 2. Bảng Nhân sự / Bác sĩ (Employees)
+CREATE TABLE Employees (
+    employee_id INT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    position VARCHAR(50) NOT NULL,
+    salary DECIMAL(18,2) NOT NULL
+);
+
+-- 3. Bảng Khoa (Departments)
+CREATE TABLE Departments (
+    dept_id INT PRIMARY KEY,
+    dept_name VARCHAR(100) NOT NULL
+);
+
+-- 4. Bảng Giường bệnh (Beds)
+CREATE TABLE Beds (
+    bed_id INT PRIMARY KEY,
+    dept_id INT NOT NULL,
+    patient_id INT DEFAULT NULL, -- NULL nghĩa là giường trống
+    FOREIGN KEY (dept_id) REFERENCES Departments(dept_id),
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id)
+);
+
+-- 5. Bảng Lịch khám (Appointments)
+CREATE TABLE Appointments (
+    appointment_id INT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    doctor_id INT NOT NULL,
+    appointment_date DATETIME NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'Pending', -- 'Pending', 'Completed', 'Cancelled'
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+    FOREIGN KEY (doctor_id) REFERENCES Employees(employee_id)
+);
+
+-- 6. Bảng Kho Vật tư Y tế (Inventory)
+CREATE TABLE Inventory (
+    item_id INT PRIMARY KEY,
+    item_name VARCHAR(100) NOT NULL,
+    stock_quantity INT NOT NULL DEFAULT 0
+);
+
+-- 7. Bảng Kho Thuốc (Medicines)
+CREATE TABLE Medicines (
+    medicine_id INT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(18,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0
+);
+
+-- 8. Bảng Công nợ Bệnh nhân (Patient_Invoices)
+CREATE TABLE Patient_Invoices (
+    patient_id INT PRIMARY KEY,
+    total_due DECIMAL(18,2) NOT NULL DEFAULT 0,
+    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id)
+);
+
+-- 9. Bảng Sản phẩm (Products)
+CREATE TABLE Products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    price DECIMAL(18,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0
+);
+
+-- 10. Bảng Dịch vụ khám (Services) 
+CREATE TABLE Services (
+    service_id INT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(18,2) NOT NULL
+);
+
+-- 11. Bảng Ví điện tử (Wallets) 
+CREATE TABLE Wallets (
+    patient_id INT PRIMARY KEY,
+    balance DECIMAL(18,2) NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive'
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id)
+);
+
+-- 12. Bảng Lịch sử sử dụng dịch vụ (Service_Usages) 
+CREATE TABLE Service_Usages (
+    usage_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT NOT NULL,
+    service_id INT NOT NULL,
+    actual_price DECIMAL(18,2) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES Patients(patient_id),
+    FOREIGN KEY (service_id) REFERENCES Services(service_id)
+);
+
+-- PHẦN 2: CHÈN DỮ LIỆU MẪU (TEST CASES)
+-- Chèn Bệnh nhân
+INSERT INTO Patients (patient_id, full_name, phone, date_of_birth) VALUES
+(1, 'Nguyen Van An', '0901111222', '1990-05-15'),
+(2, 'Tran Thi Binh', '0912222333', '1985-08-20'),
+(3, 'Le Hoang Cuong', '0923333444', '2000-12-01');
+
+-- Chèn Nhân sự 
+INSERT INTO Employees (employee_id, full_name, position, salary) VALUES
+(101, 'Dr. Hoang Minh', 'Doctor', 20000.00),
+(102, 'Dr. Lan Anh', 'Doctor', 25000.00),
+(103, 'Nurse Thu Ha', 'Nurse', 12000.00);
+
+-- Chèn Khoa
+INSERT INTO Departments (dept_id, dept_name) VALUES
+(1, 'Khoa Ngoai'),
+(2, 'Khoa Noi'),
+(3, 'Khoa ICU');
+
+-- Chèn Giường bệnh
+INSERT INTO Beds (bed_id, dept_id, patient_id) VALUES
+(101, 1, 1),    -- Bệnh nhân 1 đang nằm giường 101 Khoa Ngoại
+(201, 2, NULL), -- Giường 201 Khoa Nội đang trống
+(301, 3, 2);    -- Bệnh nhân 2 đang nằm ICU
+
+-- Chèn Lịch khám 
+INSERT INTO Appointments (appointment_id, patient_id, doctor_id, appointment_date, status) VALUES
+(104, 1, 101, '2026-06-10 08:30:00', 'Pending'),
+(105, 2, 102, '2026-05-01 09:00:00', 'Completed'),
+(106, 3, 101, '2026-05-02 10:00:00', 'Cancelled');
+
+-- Chèn Vật tư 
+INSERT INTO Inventory (item_id, item_name, stock_quantity) VALUES
+(10, 'Khau trang y te N95', 1000),
+(11, 'Gang tay vo trung', 500),
+(12, 'Dung dich sat khuan', 200);
+
+-- Chèn Thuốc
+INSERT INTO Medicines (medicine_id, name, price, stock) VALUES
+(1, 'Amoxicillin 500mg', 15000, 100),  -- Tồn kho nhiều
+(2, 'Panadol Extra', 5000, 5);         -- Tồn kho ít
+
+-- Chèn Công nợ Bệnh nhân
+INSERT INTO Patient_Invoices (patient_id, total_due) VALUES
+(1, 1500000.00), -- Đã sửa: Nợ 1.5tr để test bài Giải phóng giường bệnh
+(2, 0),
+(3, 0);
+
+-- Chèn Sản phẩm E-commerce 
+INSERT INTO Products (name, price, stock) VALUES
+('May do huyet ap Omron', 850000.00, 20),
+('May do duong huyet', 450000.00, 15);
+
+-- Chèn Dịch vụ
+INSERT INTO Services (service_id, name, price) VALUES
+(1, 'Sieu am o bung', 200000.00),
+(2, 'Xet nghiem mau', 150000.00),
+(3, 'Chup X-Quang', 250000.00);
+
+-- Chèn Ví điện tử
+INSERT INTO Wallets (patient_id, balance, status) VALUES
+(1, 500000.00, 'Active'),    -- Test Case 1: Đủ tiền thanh toán
+(2, 50000.00, 'Active'),     -- Test Case 3: Cháy ví (Chỉ có 50k, không đủ khám 200k)
+(3, 1000000.00, 'Inactive'); -- Test Case 2: Nhiều tiền nhưng thẻ bị khóa
+
+
+
+create table price_changes_log (
+    log_id int auto_increment primary key,
+    medicine_id int not null,
+    old_price decimal(10,2) not null,
+    new_price decimal(10,2) not null,
+    status varchar(20) not null,
+    difference decimal(10,2) not null,
+    changed_at datetime default current_timestamp
+);
+
+
+
+-- dùng before update vì cần chặn dữ liệu sai trước khi ghi vào bảng.
 delimiter $$
 
-create procedure sp_calculate_hospital_fee(
-    in p_total_cost decimal(15,2),
-    in p_patient_type varchar(20),
-    out p_final_amount decimal(15,2),
-    out p_message varchar(100)
-)
+create trigger trg_medicine_price_update
+before update on medicines
+for each row
 begin
-    -- kiểm tra chi phí hợp lệ
-    if p_total_cost < 0 then
-        set p_final_amount = 0;
-        set p_message = 'lỗi: chi phí không hợp lệ';
-    else
-        -- tính toán theo diện bệnh nhân
-        if p_patient_type = 'bhyt' then
-            set p_final_amount = p_total_cost * 0.2;
 
-        elseif p_patient_type = 'vip' then
-            set p_final_amount = p_total_cost * 0.9;
+    if new.price <= 0 then
+        signal sqlstate '45000'
+        set message_text = 'lỗi: giá thuốc mới không hợp lệ';
+    end if;
 
-        elseif p_patient_type = 'normal' then
-            set p_final_amount = p_total_cost;
+    if old.price <> new.price then
 
-        else
-            set p_final_amount = p_total_cost;
+        if new.price > old.price then
+            insert into price_changes_log (medicine_id,old_price,new_price,status,difference)
+            values (old.medicine_id,old.price,new.price,'tăng giá',new.price - old.price
+            );
+
+        elseif new.price < old.price then
+            insert into price_changes_log (medicine_id,old_price,new_price,status,difference)
+            values (old.medicine_id,old.price,new.price,'giảm giá',old.price - new.price);
+
         end if;
 
-        set p_message = 'đã tính toán xong';
     end if;
-end $$
+
+end$$
 
 delimiter ;
 
-set @amount = 0;
-set @msg = '';
 
-call sp_calculate_hospital_fee(1000000, 'bhyt', @amount, @msg);
-select @amount as total_amount, @msg as message;
+-- Logic xử lý
+-- OLD.Price >giá cũ trước khi update
+-- NEW.Price > giá mới sau khi update
 
-call sp_calculate_hospital_fee(1000000, 'vip', @amount, @msg);
-select @amount as total_amount, @msg as message;
 
-call sp_calculate_hospital_fee(1000000, 'normal', @amount, @msg);
-select @amount as total_amount, @msg as message;
 
-call sp_calculate_hospital_fee(-500000, 'vip', @amount, @msg);
-select @amount as total_amount, @msg as message;
+
+
+-- nếu NEW.Price <= 0 -> chặn luôn bằng SIGNAL
+update medicines
+set price = 150000
+where medicine_id = 1;
+
+
+-- nếu OLD.Price = NEW.Price -> bỏ qua 
+update medicines
+set price = 120000
+where medicine_id = 1;
+
+-- nếu NEW.Price > OLD.Price -> log TĂNG GIÁ
+update medicines
+set stock = stock + 10
+where medicine_id = 1;
+
+
+-- nếu NEW.Price < OLD.Price -> log GIẢM GIÁ
+update medicines
+set price = -5000
+where medicine_id = 1;
+
+select * from price_changes_log;
